@@ -1,255 +1,226 @@
 <?php
-include 'database.php'; // Conexión a la base de datos
+include 'database.php'; // Incluir la conexión a la base de datos
 
 if (isset($_POST["message"])) {
-    $mensaje = strtolower(trim($_POST["message"])); // Convertir a minúsculas y limpiar espacios
+    $mensaje = strtolower(trim($_POST["message"]));
 
-    // Agregar la lista de meses
-    $meses = [
-        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    ];
+    // 🔹 Paso 1: Buscar respuestas predefinidas en `Conversaciones`
+    $stmt = $conn->prepare("SELECT respuesta FROM Conversaciones WHERE pregunta = :pregunta 
+                            OR palabras_clave LIKE :clave");
+    $stmt->execute(['pregunta' => $mensaje, 'clave' => "%$mensaje%"]);
+    $respuesta = $stmt->fetchColumn();
 
-    // 🔹 Consulta sobre categorías de la canasta básica
-    if (strpos($mensaje, "categorías de la canasta básica") !== false || strpos($mensaje, "categoría de la canasta básica") !== false) {
+    if ($respuesta) {
+        echo "🤖 " . $respuesta;
+        exit();
+    }
+
+    // 🔹 Paso 2: Buscar respuestas generales en `ConversacionesGenerales`
+    $stmt = $conn->prepare("SELECT respuesta FROM ConversacionesGenerales WHERE pregunta = :pregunta 
+                            OR palabras_clave LIKE :clave");
+    $stmt->execute(['pregunta' => $mensaje, 'clave' => "%$mensaje%"]);
+    $respuesta = $stmt->fetchColumn();
+
+    if ($respuesta) {
+        echo "🤖 " . $respuesta;
+        exit();
+    }
+
+    // 🔹 Paso 3: Consultar detalles específicos de un artículo en un año determinado
+    if (preg_match("/(?:información|detalles) del artículo '([^']+)' de (\d{4})/", $mensaje, $match)) {
+        $articulo = $match[1];  // El nombre del artículo
+        $anio = $match[2];      // El año
+
+        // Consultar promedios mensuales de un artículo en un año específico
+        $stmt = $conn->prepare("SELECT articulo, 
+                                       AVG(enero) AS promedio_enero, 
+                                       AVG(febrero) AS promedio_febrero, 
+                                       AVG(marzo) AS promedio_marzo, 
+                                       AVG(abril) AS promedio_abril, 
+                                       AVG(mayo) AS promedio_mayo, 
+                                       AVG(junio) AS promedio_junio, 
+                                       AVG(julio) AS promedio_julio, 
+                                       AVG(agosto) AS promedio_agosto, 
+                                       AVG(septiembre) AS promedio_septiembre, 
+                                       AVG(octubre) AS promedio_octubre, 
+                                       AVG(noviembre) AS promedio_noviembre, 
+                                       AVG(diciembre) AS promedio_diciembre
+                                FROM CanastaBasicaUrbana
+                                WHERE articulo = :articulo AND anio = :anio
+                                GROUP BY articulo");
+        $stmt->execute(['articulo' => $articulo, 'anio' => $anio]);
+        $datos_articulo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($datos_articulo) {
+            echo "📌 Promedios del artículo '$articulo' para el año $anio:<br>";
+            echo "Enero: " . $datos_articulo['promedio_enero'] . "<br>";
+            echo "Febrero: " . $datos_articulo['promedio_febrero'] . "<br>";
+            echo "Marzo: " . $datos_articulo['promedio_marzo'] . "<br>";
+            echo "Abril: " . $datos_articulo['promedio_abril'] . "<br>";
+            echo "Mayo: " . $datos_articulo['promedio_mayo'] . "<br>";
+            echo "Junio: " . $datos_articulo['promedio_junio'] . "<br>";
+            echo "Julio: " . $datos_articulo['promedio_julio'] . "<br>";
+            echo "Agosto: " . $datos_articulo['promedio_agosto'] . "<br>";
+            echo "Septiembre: " . $datos_articulo['promedio_septiembre'] . "<br>";
+            echo "Octubre: " . $datos_articulo['promedio_octubre'] . "<br>";
+            echo "Noviembre: " . $datos_articulo['promedio_noviembre'] . "<br>";
+            echo "Diciembre: " . $datos_articulo['promedio_diciembre'] . "<br>";
+
+            // Datos para gráficos
+            $promedios = [
+                'enero' => $datos_articulo['promedio_enero'],
+                'febrero' => $datos_articulo['promedio_febrero'],
+                'marzo' => $datos_articulo['promedio_marzo'],
+                'abril' => $datos_articulo['promedio_abril'],
+                'mayo' => $datos_articulo['promedio_mayo'],
+                'junio' => $datos_articulo['promedio_junio'],
+                'julio' => $datos_articulo['promedio_julio'],
+                'agosto' => $datos_articulo['promedio_agosto'],
+                'septiembre' => $datos_articulo['promedio_septiembre'],
+                'octubre' => $datos_articulo['promedio_octubre'],
+                'noviembre' => $datos_articulo['promedio_noviembre'],
+                'diciembre' => $datos_articulo['promedio_diciembre']
+            ];
+
+            // Enviar datos para graficar
+            echo json_encode($promedios);
+        } else {
+            echo "📌 No se encontraron datos para el artículo '$articulo' en el año $anio.";
+        }
+        exit();
+    }
+
+    // 🔹 Paso 4: Consultar información general sobre el artículo (si no se especificó año)
+    if (preg_match("/(?:información|detalles) del artículo '([^']+)'/", $mensaje, $match)) {
+        $articulo = $match[1];  // El nombre del artículo
+
+        // Consultar información adicional del artículo desde `InformacionCanastaBasica`
+        $stmt = $conn->prepare("SELECT * FROM InformacionCanastaBasica WHERE articulo = :articulo");
+        $stmt->execute(['articulo' => $articulo]);
+        $info_articulo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($info_articulo) {
+            echo "📌 Información del artículo '$articulo':<br>";
+            echo "Categoría: " . $info_articulo['categoria'] . "<br>";
+            echo "Descripción: " . $info_articulo['descripcion'] . "<br>";
+            echo "Unidad de medida: " . $info_articulo['unidad_medida'] . "<br>";
+            echo "Porcentaje de composición: " . $info_articulo['porcentaje_composicion'] . "%<br>";
+            echo "Tipo de artículo: " . $info_articulo['tipo_articulo'] . "<br>";
+        } else {
+            echo "📌 No se encontró información adicional para el artículo '$articulo'.";
+        }
+        exit();
+    }
+
+    // 🔹 Paso 5: Consultar todas las categorías disponibles
+    if (preg_match("/categorías de artículos/", $mensaje)) {
         $stmt = $conn->prepare("SELECT DISTINCT categoria FROM InformacionCanastaBasica");
         $stmt->execute();
-        $result = $stmt->fetchAll();
+        $categorias = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        if ($result) {
-            echo "Las categorías disponibles en la canasta básica son:<br>";
-            foreach ($result as $row) {
-                echo "✅ " . $row['categoria'] . "<br>";
+        if ($categorias) {
+            echo "📌 Las categorías disponibles son:<br>";
+            foreach ($categorias as $categoria) {
+                echo "- " . $categoria . "<br>";
             }
         } else {
-            echo "❓ No se encontraron categorías en la canasta básica.";
+            echo "📌 No se encontraron categorías disponibles.";
         }
+        exit();
     }
-    // 🔹 Consulta sobre los artículos por categoría
-    elseif (strpos($mensaje, "artículos de la categoría") !== false) {
-        preg_match('/categoría "([^"]+)"/', $mensaje, $categoriaMatch);
-        $categoria = isset($categoriaMatch[1]) ? $categoriaMatch[1] : null;
 
-        if ($categoria) {
-            $stmt = $conn->prepare("SELECT * FROM InformacionCanastaBasica WHERE categoria = :categoria");
-            $stmt->execute(['categoria' => $categoria]);
-            $result = $stmt->fetchAll();
+    // 🔹 Paso 6: Consultar cantidad de artículos por categoría
+    if (preg_match("/cantidad de artículos en la categoría '([^']+)'/", $mensaje, $match)) {
+        $categoria = $match[1];  // La categoría proporcionada
 
-            if ($result) {
-                echo "Los artículos en la categoría '$categoria' son:<br>";
-                foreach ($result as $row) {
-                    echo "✅ Artículo: " . $row['articulo'] . "<br>";
-                    echo "✅ Descripción: " . $row['descripcion'] . "<br>";
-                    echo "✅ Unidad de medida: " . $row['unidad_medida'] . "<br>";
-                    echo "✅ Porcentaje de composición: " . $row['porcentaje_composicion'] . "%<br>";
-                    echo "✅ Tipo de artículo: " . $row['tipo_articulo'] . "<br><br>";
-                }
-            } else {
-                echo "❓ No se encontraron artículos en la categoría '$categoria'.";
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM InformacionCanastaBasica WHERE categoria = :categoria");
+        $stmt->execute(['categoria' => $categoria]);
+        $cantidad_articulos = $stmt->fetchColumn();
+
+        if ($cantidad_articulos) {
+            echo "📌 La cantidad de artículos en la categoría '$categoria' es: $cantidad_articulos.";
+        } else {
+            echo "📌 No se encontraron artículos en la categoría '$categoria'.";
+        }
+        exit();
+    }
+
+    // 🔹 Paso 7: Consultar unidades de medida disponibles
+    if (preg_match("/unidades de medida disponibles/", $mensaje)) {
+        $stmt = $conn->prepare("SELECT DISTINCT unidad_medida FROM InformacionCanastaBasica");
+        $stmt->execute();
+        $unidades = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        if ($unidades) {
+            echo "📌 Las unidades de medida disponibles son:<br>";
+            foreach ($unidades as $unidad) {
+                echo "- " . $unidad . "<br>";
             }
         } else {
-            echo "❓ No se especificó la categoría. ¿Puedes intentar de nuevo?";
+            echo "📌 No se encontraron unidades de medida disponibles.";
         }
+        exit();
     }
-    // 🔹 Consulta sobre los gráficos
-    elseif (strpos($mensaje, "gráfica") !== false || strpos($mensaje, "grafico") !== false) {
-        if (strpos($mensaje, "promedio de precios") !== false) {
-            preg_match('/\d{4}/', $mensaje, $matches);
-            $anio = isset($matches[0]) ? $matches[0] : null;
 
-            if ($anio) {
-                exec("python3 generar_grafica.py promedio $anio");
+    // 🔹 Paso 8: Consultar tipos de artículos disponibles
+    if (preg_match("/tipos de artículos disponibles/", $mensaje)) {
+        $stmt = $conn->prepare("SELECT DISTINCT tipo_articulo FROM InformacionCanastaBasica");
+        $stmt->execute();
+        $tipos = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-                echo "📊 Aquí tienes la gráfica del promedio de precios en $anio:<br>";
-                echo "<img src='graficos/grafica.png' alt='Gráfico de Precios'>";
-            } else {
-                echo "❗ Por favor, proporciona un año para generar la gráfica.";
-            }
-        } elseif (strpos($mensaje, "precio de") !== false) {
-            $articulo = trim(str_replace("precio de", "", $mensaje));
-
-            if ($articulo) {
-                exec("python3 generar_grafica.py precio \"$articulo\"");
-
-                echo "📊 Aquí tienes la gráfica de precios de $articulo:<br>";
-                echo "<img src='graficos/grafica.png' alt='Gráfico de Precios'>";
-            } else {
-                echo "❗ Por favor, proporciona un artículo para generar la gráfica.";
+        if ($tipos) {
+            echo "📌 Los tipos de artículos disponibles son:<br>";
+            foreach ($tipos as $tipo) {
+                echo "- " . $tipo . "<br>";
             }
         } else {
-            echo "❓ ¿Sobre qué quieres ver una gráfica? Puedes preguntar por el 'promedio de precios en [año]' o 'precio de [artículo]'.";
+            echo "📌 No se encontraron tipos de artículos disponibles.";
         }
+        exit();
     }
-    // 🔹 Promedio de precios por año
-    elseif (strpos($mensaje, "promedio de precios") !== false) {
-        preg_match('/\d{4}/', $mensaje, $matches);
-        $anio = isset($matches[0]) ? $matches[0] : null;
 
-        if ($anio) {
-            $stmt = $conn->prepare("SELECT articulo, ROUND(AVG(precio),2) AS promedio_precio FROM CanastaBasicaUrbana WHERE anio = :anio GROUP BY articulo");
-            $stmt->execute(['anio' => $anio]);
-            $result = $stmt->fetchAll();
+    // 🔹 Paso 9: Consultar información sobre la descripción general de la canasta básica
+    if (preg_match("/descripción general de la canasta básica/", $mensaje)) {
+        $stmt = $conn->prepare("SELECT descripcion_general FROM canasta_basica_info");
+        $stmt->execute();
+        $descripcion = $stmt->fetchColumn();
 
-            if ($result) {
-                echo "📈 El promedio de precios en $anio es:<br>";
-                foreach ($result as $row) {
-                    echo "✅ " . $row['articulo'] . ": $" . $row['promedio_precio'] . "<br>";
-                }
-            } else {
-                echo "❌ No se encontraron datos para el año $anio.";
-            }
+        if ($descripcion) {
+            echo "📌 Descripción general de la canasta básica: " . $descripcion;
         } else {
-            echo "❗ Por favor, proporciona un año para calcular el promedio de precios.";
+            echo "📌 No se encontró información sobre la descripción general de la canasta básica.";
         }
+        exit();
     }
-    // 🔹 Consulta detallada del promedio por artículo
-    elseif (strpos($mensaje, "promedio detallado por artículo") !== false) {
-        preg_match('/\d{4}/', $mensaje, $matches);
-        $anio = isset($matches[0]) ? $matches[0] : null;
 
-        if ($anio) {
-            // Consulta SQL para obtener el promedio de los precios por artículo en el año especificado
-            $stmt = $conn->prepare("
-                SELECT articulo, 
-                    AVG(enero) AS promedio_enero, 
-                    AVG(febrero) AS promedio_febrero, 
-                    AVG(marzo) AS promedio_marzo, 
-                    AVG(abril) AS promedio_abril, 
-                    AVG(mayo) AS promedio_mayo, 
-                    AVG(junio) AS promedio_junio, 
-                    AVG(julio) AS promedio_julio, 
-                    AVG(agosto) AS promedio_agosto, 
-                    AVG(septiembre) AS promedio_septiembre, 
-                    AVG(octubre) AS promedio_octubre, 
-                    AVG(noviembre) AS promedio_noviembre, 
-                    AVG(diciembre) AS promedio_diciembre
-                FROM CanastaBasicaUrbana
-                WHERE anio = :anio
-                GROUP BY articulo");
-            $stmt->execute(['anio' => $anio]);
-            $result = $stmt->fetchAll();
+    // 🔹 Paso 10: Consultar el costo promedio de la canasta básica
+    if (preg_match("/costo promedio de la canasta básica/", $mensaje)) {
+        $stmt = $conn->prepare("SELECT costo_promedio FROM canasta_basica_info");
+        $stmt->execute();
+        $costo_promedio = $stmt->fetchColumn();
 
-            if ($result) {
-                echo "✅ Consulta realizada con éxito.<br>";
-                echo "El promedio de precios de los productos en el año $anio es:<br>";
-                foreach ($result as $row) {
-                    echo "- " . $row['articulo'] . ":<br>";
-                    echo "  Enero: $" . number_format($row['promedio_enero'], 2) . "<br>";
-                    echo "  Febrero: $" . number_format($row['promedio_febrero'], 2) . "<br>";
-                    echo "  Marzo: $" . number_format($row['promedio_marzo'], 2) . "<br>";
-                    echo "  Abril: $" . number_format($row['promedio_abril'], 2) . "<br>";
-                    echo "  Mayo: $" . number_format($row['promedio_mayo'], 2) . "<br>";
-                    echo "  Junio: $" . number_format($row['promedio_junio'], 2) . "<br>";
-                    echo "  Julio: $" . number_format($row['promedio_julio'], 2) . "<br>";
-                    echo "  Agosto: $" . number_format($row['promedio_agosto'], 2) . "<br>";
-                    echo "  Septiembre: $" . number_format($row['promedio_septiembre'], 2) . "<br>";
-                    echo "  Octubre: $" . number_format($row['promedio_octubre'], 2) . "<br>";
-                    echo "  Noviembre: $" . number_format($row['promedio_noviembre'], 2) . "<br>";
-                    echo "  Diciembre: $" . number_format($row['promedio_diciembre'], 2) . "<br>";
-                }
-            } else {
-                echo "⚠️ No se encontraron productos para el año $anio.";
-            }
+        if ($costo_promedio) {
+            echo "📌 El costo promedio de la canasta básica es: $costo_promedio";
         } else {
-            echo "❌ Error: No proporcionaste un año válido.";
+            echo "📌 No se encontró información sobre el costo promedio de la canasta básica.";
         }
+        exit();
     }
-    // 🔹 Promedio detallado del artículo por año (nuevo)
-    elseif (strpos($mensaje, "promedio detallado del artículo") !== false) {
-        preg_match('/\d{4}/', $mensaje, $matches);
-        $anio = isset($matches[0]) ? $matches[0] : null;
-        preg_match('/"([^"]+)"/', $mensaje, $articuloMatch);
-        $articulo = isset($articuloMatch[1]) ? $articuloMatch[1] : null;
 
-        if ($anio && $articulo) {
-            // Consulta SQL para obtener el promedio del artículo específico en el año
-            $stmt = $conn->prepare("
-                SELECT articulo, 
-                    AVG(enero) AS promedio_enero, 
-                    AVG(febrero) AS promedio_febrero, 
-                    AVG(marzo) AS promedio_marzo, 
-                    AVG(abril) AS promedio_abril, 
-                    AVG(mayo) AS promedio_mayo, 
-                    AVG(junio) AS promedio_junio, 
-                    AVG(julio) AS promedio_julio, 
-                    AVG(agosto) AS promedio_agosto, 
-                    AVG(septiembre) AS promedio_septiembre, 
-                    AVG(octubre) AS promedio_octubre, 
-                    AVG(noviembre) AS promedio_noviembre, 
-                    AVG(diciembre) AS promedio_diciembre
-                FROM CanastaBasicaUrbana
-                WHERE anio = :anio AND articulo = :articulo
-                GROUP BY articulo");
-            $stmt->execute(['anio' => $anio, 'articulo' => $articulo]);
-            $result = $stmt->fetch();
+    // 🔹 Paso 11: Consultar la variación anual de la canasta básica
+    if (preg_match("/variación anual de la canasta básica/", $mensaje)) {
+        $stmt = $conn->prepare("SELECT variacion_anual FROM canasta_basica_info");
+        $stmt->execute();
+        $variacion_anual = $stmt->fetchColumn();
 
-            if ($result) {
-                echo "✅ Consulta realizada con éxito.<br>";
-                echo "El promedio de precios del artículo '$articulo' en el año $anio es:<br>";
-                echo "  Enero: $" . number_format($result['promedio_enero'], 2) . "<br>";
-                echo "  Febrero: $" . number_format($result['promedio_febrero'], 2) . "<br>";
-                echo "  Marzo: $" . number_format($result['promedio_marzo'], 2) . "<br>";
-                echo "  Abril: $" . number_format($result['promedio_abril'], 2) . "<br>";
-                echo "  Mayo: $" . number_format($result['promedio_mayo'], 2) . "<br>";
-                echo "  Junio: $" . number_format($result['promedio_junio'], 2) . "<br>";
-                echo "  Julio: $" . number_format($result['promedio_julio'], 2) . "<br>";
-                echo "  Agosto: $" . number_format($result['promedio_agosto'], 2) . "<br>";
-                echo "  Septiembre: $" . number_format($result['promedio_septiembre'], 2) . "<br>";
-                echo "  Octubre: $" . number_format($result['promedio_octubre'], 2) . "<br>";
-                echo "  Noviembre: $" . number_format($result['promedio_noviembre'], 2) . "<br>";
-                echo "  Diciembre: $" . number_format($result['promedio_diciembre'], 2) . "<br>";
-            } else {
-                echo "⚠️ No se encontró información para el artículo '$articulo' en el año $anio.";
-            }
+        if ($variacion_anual) {
+            echo "📌 La variación anual de la canasta básica es: $variacion_anual%";
         } else {
-            echo "❗ Por favor, proporciona tanto el año como el nombre del artículo para obtener el promedio.";
+            echo "📌 No se encontró información sobre la variación anual de la canasta básica.";
         }
-    }
-    // 🔹 Consulta sobre la información de la canasta básica
-elseif (strpos($mensaje, "canasta básica") !== false || strpos($mensaje, "información") !== false) {
-    $stmt = $conn->prepare("SELECT * FROM canasta_basica_info WHERE descripcion_general LIKE :mensaje");
-    $stmt->execute(['mensaje' => "%" . $mensaje . "%"]);
-    $result = $stmt->fetchAll();
-
-    if ($result) {
-        echo "Información sobre la canasta básica:<br>";
-        foreach ($result as $row) {
-            echo "✅ Concepto: " . $row['concepto'] . "<br>";
-            echo "✅ Productos típicos: " . $row['productos_tipicos'] . "<br>";
-            echo "✅ Costo promedio: $" . $row['costo_promedio'] . "<br>";
-            echo "✅ Variación anual: " . $row['variacion_anual'] . "%<br>";
-            echo "✅ Año de inicio: " . $row['año_inicio'] . "<br>";
-            echo "✅ Región: " . $row['region'] . "<br>";
-            echo "✅ Fuente de información: " . $row['fuente_informacion'] . "<br>";
-            echo "✅ Última actualización: " . $row['fecha_actualizacion'] . "<br>";
-            echo "<br>";
-        }
-    } else {
-        echo "❓ No se encontró información relacionada con 'canasta básica'. ¿Puedes ser más específico?";
-    }
-}
-// 🔹 Consulta sobre los artículos de la canasta básica
-elseif (strpos($mensaje, "artículos de la canasta") !== false) {
-    $stmt = $conn->prepare("SELECT * FROM InformacionCanastaBasica WHERE articulo LIKE :mensaje");
-    $stmt->execute(['mensaje' => "%" . $mensaje . "%"]);
-    $result = $stmt->fetchAll();
-
-    if ($result) {
-        echo "Información sobre los artículos de la canasta básica:<br>";
-        foreach ($result as $row) {
-            echo "✅ Artículo: " . $row['articulo'] . "<br>";
-            echo "✅ Categoría: " . $row['categoria'] . "<br>";
-            echo "✅ Descripción: " . $row['descripcion'] . "<br>";
-            echo "✅ Unidad de medida: " . $row['unidad_medida'] . "<br>";
-            echo "✅ Porcentaje de composición: " . $row['porcentaje_composicion'] . "%<br>";
-            echo "✅ Tipo de artículo: " . $row['tipo_articulo'] . "<br>";
-            echo "<br>";
-        }
-    } else {
-        echo "❓ No se encontró información sobre artículos de la canasta básica. ¿Puedes ser más específico?";
+        exit();
     }
 
-} else {
-    echo "Por favor ingresa un mensaje.";
+    echo "🤖 Lo siento, no entiendo tu consulta. ¿Puedes reformularla?";
 }
 ?>
