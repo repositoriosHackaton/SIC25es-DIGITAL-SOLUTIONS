@@ -10,10 +10,9 @@ Este repositorio forma parte de la iniciativa de Hackathon y contiene soluciones
 
 ## Estructura del repositorio
 
-- `CANASTA BASICA/`: :contentReference[oaicite:8]{index=8}&#8203;:contentReference[oaicite:9]{index=9}
-- `Chatbot/`: :contentReference[oaicite:10]{index=10}&#8203;:contentReference[oaicite:11]{index=11}
-- `.gitignore`: :contentReference[oaicite:12]{index=12}&#8203;:contentReference[oaicite:13]{index=13}
-- `README.md`: :contentReference[oaicite:14]{index=14}&#8203;:contentReference[oaicite:15]{index=15}
+- `CANASTA BASICA/`:
+- `Chatbot/`: 
+- `README.md`: 
 
 ## Requisitos
 
@@ -22,9 +21,8 @@ Este repositorio forma parte de la iniciativa de Hackathon y contiene soluciones
 - [Python](https://www.python.org/downloads/)
 - [Jupyter Notebook](https://jupyter.org/install)
 
-:contentReference[oaicite:18]{index=18}&#8203;:contentReference[oaicite:19]{index=19}
 
 ```bash
 python -m venv env
-source env/bin/activate  # En Windows, usar 'env\Scripts\activate'
+
 
