@@ -1,0 +1,86 @@
+Preguntas directas sobre precios:
+"¿Cuánto cuesta el kilo de arroz?"
+"¿Cuál es el precio del aceite vegetal?"
+"¿Cuanto cuesta el cartón de huevo?"
+"¿Cuanto cuesta el kilo de carne de res?"
+Preguntas sobre la composición de la canasta básica:
+"¿Qué productos incluye la canasta básica?"
+"¿Qué alimentos son esenciales en la canasta básica?"
+Preguntas sobre lugares de compra y ahorro:
+"¿Dónde puedo comprar la canasta básica a buen precio?"
+"¿Cómo puedo ahorrar dinero al comprar productos básicos?"
+"¿Dónde encuentro ofertas de productos de la canasta básica?"
+Preguntas sobre la variación de precios:
+"¿Cómo ha cambiado el precio de la canasta básica en el último año?"
+"¿Por qué han subido los precios de los productos básicos?"
+"¿Qué productos han aumentado más de precio?"
+Preguntas sobre productos específicos:
+"¿Cuánto cuesta la harina de trigo?"
+"¿Cuál es el precio del gas propano?"
+"¿Cuánto cuesta el agua embotellada?"
+Tabla ConversacionesGenerales (Conversaciones generales y de saludo)
+
+Saludos y despedidas:
+"Hola"
+"Buenos días"
+"¿Cómo estás?"
+"Adiós"
+Preguntas sobre el chatbot:
+"¿Cómo te llamas?"
+"¿Qué puedes hacer?"
+"¿Eres un robot?"
+"¿Cuál es tu propósito?"
+Preguntas sobre temas generales:
+"¿Qué tal el clima hoy?"
+"¿Puedes contarme un chiste?"
+"¿Cuál es el significado de la vida?"
+"¿Puedes hacer matemáticas?"
+"¿Puedes traducir algo?"
+"¿Cuál es tu libro favorito?"
+Preguntas sobre el chatbot como persona:
+"¿Cuántos años tienes?"
+"¿Dónde vives?"
+"¿Cómo te sientes hoy?"
+"¿Tienes amigos?"
+"¿Cuál es tu color favorito?"
+"¿Cuál es tu comida favorita?"
+Tabla CanastaBasicaUrbana (Datos de precios históricos)
+
+Preguntas sobre precios por año y artículo:
+"¿Cuál fue el precio promedio del arroz en enero de 2022?"
+"¿Qué precio tenía el frijol en marzo de 2020?"
+"¿Cual fue el precio de la leche en el mes de diciembre del año 2019?"
+Preguntas sobre tendencias de precios:
+"¿Cuál ha sido la variación de precios del pan a lo largo de los años?"
+"¿Qué artículo ha tenido el mayor aumento de precio en los últimos años?"
+"¿Cuáles son los productos que han mantenido su precio más estable?"
+Preguntas sobre promedios:
+"¿Cuál es el precio promedio anual del aceite?"
+"¿Cuál es el promedio del precio de la carne de res en el año 2022?"
+Tabla InformacionCanastaBasica (Información detallada de productos)
+
+Preguntas sobre productos específicos:
+"¿Qué es el arroz?"
+"¿Cuál es la unidad de medida de la leche?"
+"¿Qué tipo de artículo es el jabón de baño?"
+"¿Cuál es el porcentaje de composición de la carne de res en la canasta básica?"
+Preguntas sobre categorías:
+"¿Qué productos de la canasta básica pertenecen a la categoría de alimentos?"
+"¿Qué productos de la canasta básica pertenecen a la categoria de higiene?"
+"¿Qué productos de la canasta básica pertenecen a la categoria de bebidas?"
+Preguntas sobre características:
+"¿Qué artículos se consideran esenciales en la canasta básica?"
+"¿Cuál es la descripción del aceite de cocina?"
+Tabla canasta_basica_info (Información general sobre la canasta básica)
+
+Preguntas sobre la definición y concepto:
+"¿Qué es la canasta básica?"
+"¿Cuál es el concepto de la canasta básica?"
+Preguntas sobre productos y costos:
+"¿Qué productos típicos incluye la canasta básica?"
+"¿Cuál es el costo promedio de la canasta básica?"
+"¿Cuál ha sido la variación anual del costo de la canasta básica?"
+Preguntas sobre datos históricos y geográficos:
+"¿Desde qué año se mide la canasta básica en México?"
+"¿Cuál es la fuente de información sobre la canasta básica en Centroamérica?"
+"¿Qué información sobre la canasta básica tiene de latinoamérica?"
